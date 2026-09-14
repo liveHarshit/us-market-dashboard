@@ -1,29 +1,53 @@
 import { Area, AreaChart, ResponsiveContainer, Tooltip, YAxis } from "recharts";
-import { buildSeries, type Range, type Ticker } from "@/lib/market-data";
+import {
+  seriesPoints,
+  type Instrument,
+  type Quote,
+  type Range,
+} from "@/lib/market-data";
 
-export function TickerCard({ ticker, range }: { ticker: Ticker; range: Range }) {
-  const data = buildSeries(ticker, range);
-  const pct = ticker.change[range];
+export function TickerCard({
+  instrument,
+  quote,
+  range,
+}: {
+  instrument: Instrument;
+  quote: Quote | undefined;
+  range: Range;
+}) {
+  if (!quote) {
+    return (
+      <article className="rounded-lg border border-border bg-card p-3 sm:p-4">
+        <div className="font-mono text-sm font-semibold text-foreground">
+          {instrument.symbol}
+        </div>
+        <div className="truncate text-xs text-muted-foreground">{instrument.name}</div>
+        <div className="mt-3 h-20 animate-pulse rounded bg-secondary/60 sm:h-24" />
+        <div className="mt-2 font-mono text-[11px] text-muted-foreground">loading…</div>
+      </article>
+    );
+  }
+
+  const data = seriesPoints(quote, range);
+  const pct = quote.change[range] ?? 0;
   const up = pct >= 0;
   const stroke = up ? "var(--color-up)" : "var(--color-down)";
-  const gradId = `grad-${ticker.symbol}-${range}`;
+  const gradId = `grad-${quote.symbol}-${range}`;
 
   return (
     <article className="rounded-lg border border-border bg-card p-3 transition-colors hover:border-ring sm:p-4">
       <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-2 sm:gap-3">
         <div className="min-w-0">
           <div className="font-mono text-sm font-semibold tracking-tight text-foreground">
-            {ticker.symbol}
+            {instrument.symbol}
           </div>
-          <div className="truncate text-xs text-muted-foreground">{ticker.name}</div>
+          <div className="truncate text-xs text-muted-foreground">{instrument.name}</div>
         </div>
         <div className="shrink-0 text-right">
           <div className="font-mono text-sm tabular-nums text-foreground sm:text-base">
-            {ticker.price.toLocaleString("en-US", { minimumFractionDigits: 2 })}
+            {quote.price.toLocaleString("en-US", { minimumFractionDigits: 2 })}
           </div>
-          <div
-            className={`font-mono text-xs tabular-nums ${up ? "text-up" : "text-down"}`}
-          >
+          <div className={`font-mono text-xs tabular-nums ${up ? "text-up" : "text-down"}`}>
             {up ? "▲" : "▼"} {up ? "+" : "−"}
             {Math.abs(pct).toFixed(2)}%
           </div>
@@ -50,7 +74,7 @@ export function TickerCard({ ticker, range }: { ticker: Ticker; range: Range }) 
                 color: "var(--color-popover-foreground)",
               }}
               labelFormatter={() => ""}
-              formatter={(v: number | string) => [Number(v).toFixed(2), ticker.symbol]}
+              formatter={(v: number | string) => [Number(v).toFixed(2), quote.symbol]}
             />
             <Area
               type="monotone"
@@ -65,7 +89,7 @@ export function TickerCard({ ticker, range }: { ticker: Ticker; range: Range }) 
       </div>
 
       <div className="mt-2 flex items-center justify-between font-mono text-[11px] text-muted-foreground">
-        <span>VOL {ticker.volume}</span>
+        <span>VOL {quote.volume}</span>
         <span>{range}</span>
       </div>
     </article>

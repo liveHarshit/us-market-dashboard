@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { TickerCard } from "@/components/TickerCard";
 import {
@@ -7,8 +8,10 @@ import {
   RANGE_LABEL,
   TAIWAN_ETFS,
   US_CATEGORIES,
+  fetchMarketSnapshot,
+  type Instrument,
+  type Quote,
   type Range,
-  type Ticker,
 } from "@/lib/market-data";
 
 export const Route = createFileRoute("/")({
@@ -18,7 +21,7 @@ export const Route = createFileRoute("/")({
       {
         name: "description",
         content:
-          "Track top US stocks by sector alongside US-listed Japan and Taiwan ETFs with one shared time filter and clean price charts.",
+          "Live prices for top US stocks by sector alongside US-listed Japan and Taiwan ETFs, with one shared time filter and clean price charts.",
       },
       {
         property: "og:title",
@@ -27,7 +30,7 @@ export const Route = createFileRoute("/")({
       {
         property: "og:description",
         content:
-          "Top US stocks by sector plus US-listed Japan and Taiwan ETFs in one simple dashboard.",
+          "Live prices for top US stocks by sector plus US-listed Japan and Taiwan ETFs in one simple dashboard.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
@@ -36,11 +39,31 @@ export const Route = createFileRoute("/")({
   component: Dashboard,
 });
 
-function Grid({ tickers, range }: { tickers: Ticker[]; range: Range }) {
+/**
+ * Phones and tablets get a horizontal snap rail whose card width adapts to the
+ * viewport, so the next card always peeks in. Desktop keeps a 3-up grid.
+ */
+function Rail({
+  tickers,
+  quotes,
+  range,
+}: {
+  tickers: Instrument[];
+  quotes: Record<string, Quote>;
+  range: Range;
+}) {
   return (
-    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+    <div
+      className="-mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:-mx-5 sm:px-5 lg:mx-0 lg:grid lg:grid-cols-3 lg:overflow-visible lg:px-0 lg:pb-0"
+      aria-label="Scroll sideways for more tickers"
+    >
       {tickers.map((t) => (
-        <TickerCard key={t.symbol} ticker={t} range={range} />
+        <div
+          key={t.symbol}
+          className="w-[78%] shrink-0 snap-start sm:w-[46%] md:w-[32%] lg:w-auto"
+        >
+          <TickerCard instrument={t} quote={quotes[t.symbol]} range={range} />
+        </div>
       ))}
     </div>
   );
@@ -60,19 +83,26 @@ function SectionHeader({ title, note }: { title: string; note: string }) {
   );
 }
 
-function Section({
-  title, note, tickers, range,
-}: { title: string; note: string; tickers: Ticker[]; range: Range }) {
-  return (
-    <section>
-      <SectionHeader title={title} note={note} />
-      <Grid tickers={tickers} range={range} />
-    </section>
-  );
+function timeAgo(iso?: string) {
+  if (!iso) return "—";
+  const mins = Math.max(0, Math.round((Date.now() - new Date(iso).getTime()) / 60000));
+  if (mins < 1) return "just now";
+  if (mins < 60) return `${mins}m ago`;
+  const hrs = Math.round(mins / 60);
+  return `${hrs}h ago`;
 }
 
 function Dashboard() {
   const [range, setRange] = useState<Range>("1D");
+  const { data, isError, isFetching } = useQuery({
+    queryKey: ["market-snapshot"],
+    queryFn: fetchMarketSnapshot,
+    refetchInterval: 60_000,
+    refetchOnWindowFocus: true,
+    staleTime: 30_000,
+  });
+
+  const quotes = data?.quotes ?? {};
 
   return (
     <div className="min-h-screen bg-background">
@@ -92,7 +122,7 @@ function Dashboard() {
               <span className="hidden font-mono text-[11px] text-muted-foreground sm:block">
                 {RANGE_LABEL[range]}
               </span>
-              <div className="grid w-full grid-cols-5 gap-1 rounded-md border border-border p-1 sm:w-auto sm:flex">
+              <div className="grid w-full grid-cols-5 gap-1 rounded-md border border-border p-1 sm:flex sm:w-auto">
                 {RANGES.map((r) => (
                   <button
                     key={r}
@@ -115,31 +145,34 @@ function Dashboard() {
       <main className="mx-auto max-w-6xl space-y-7 px-4 py-6 sm:space-y-8 sm:px-5 sm:py-8">
         <section>
           <SectionHeader title="Top US stocks" note="5 sectors · 15 names" />
-          <div className="space-y-6">
+          <div className="space-y-5 sm:space-y-6">
             {US_CATEGORIES.map((c) => (
               <div key={c.label}>
                 <h3 className="mb-2 font-mono text-[11px] uppercase tracking-[0.14em] text-muted-foreground">
                   {c.label}
                 </h3>
-                <Grid tickers={c.tickers} range={range} />
+                <Rail tickers={c.tickers} quotes={quotes} range={range} />
               </div>
             ))}
           </div>
         </section>
-        <Section
-          title="Japan ETFs (US-listed)"
-          note="9 funds"
-          tickers={JAPAN_ETFS}
-          range={range}
-        />
-        <Section
-          title="Taiwan ETFs (US-listed)"
-          note="9 funds"
-          tickers={TAIWAN_ETFS}
-          range={range}
-        />
+
+        <section>
+          <SectionHeader title="Japan ETFs (US-listed)" note="9 funds" />
+          <Rail tickers={JAPAN_ETFS} quotes={quotes} range={range} />
+        </section>
+
+        <section>
+          <SectionHeader title="Taiwan ETFs (US-listed)" note="9 funds" />
+          <Rail tickers={TAIWAN_ETFS} quotes={quotes} range={range} />
+        </section>
+
         <p className="font-mono text-[11px] text-muted-foreground">
-          Sample figures for layout — connect a live market feed to stream real prices.
+          {isError
+            ? "Couldn't load prices right now — retrying automatically."
+            : `Real market prices · updated ${timeAgo(data?.updatedAt)}${
+                isFetching ? " · refreshing" : ""
+              }`}
         </p>
       </main>
     </div>
