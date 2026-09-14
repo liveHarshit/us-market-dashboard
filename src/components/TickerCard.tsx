@@ -9,16 +9,16 @@ export function TickerCard({ ticker, range }: { ticker: Ticker; range: Range }) 
   const gradId = `grad-${ticker.symbol}-${range}`;
 
   return (
-    <article className="rounded-lg border border-border bg-card p-4 transition-colors hover:border-ring">
-      <div className="flex items-start justify-between gap-3">
+    <article className="rounded-lg border border-border bg-card p-3 transition-colors hover:border-ring sm:p-4">
+      <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-2 sm:gap-3">
         <div className="min-w-0">
           <div className="font-mono text-sm font-semibold tracking-tight text-foreground">
             {ticker.symbol}
           </div>
           <div className="truncate text-xs text-muted-foreground">{ticker.name}</div>
         </div>
-        <div className="text-right">
-          <div className="font-mono text-base tabular-nums text-foreground">
+        <div className="shrink-0 text-right">
+          <div className="font-mono text-sm tabular-nums text-foreground sm:text-base">
             {ticker.price.toLocaleString("en-US", { minimumFractionDigits: 2 })}
           </div>
           <div
@@ -30,7 +30,7 @@ export function TickerCard({ ticker, range }: { ticker: Ticker; range: Range }) 
         </div>
       </div>
 
-      <div className="mt-3 h-24">
+      <div className="mt-3 h-20 sm:h-24">
         <ResponsiveContainer width="100%" height="100%">
           <AreaChart data={data} margin={{ top: 4, right: 0, bottom: 0, left: 0 }}>
             <defs>
