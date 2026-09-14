@@ -32,12 +32,15 @@ jobs:
 
       - name: Publish data to gh-pages
         run: |
+          set -e
           git config user.name "market-data-bot"
           git config user.email "actions@github.com"
           mkdir -p /tmp/data && cp public/data/market.json /tmp/data/market.json
-          git fetch origin gh-pages
-          git checkout gh-pages
+          # Shallow checkout only has the triggering branch; fetch gh-pages explicitly.
+          git fetch origin +refs/heads/gh-pages:refs/remotes/origin/gh-pages
+          git checkout -B gh-pages origin/gh-pages
           mkdir -p data && cp /tmp/data/market.json data/market.json
           git add data/market.json
           git diff --staged --quiet || git commit -m "Refresh market data"
           git push origin gh-pages
+
