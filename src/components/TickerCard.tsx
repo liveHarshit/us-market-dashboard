@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Area, AreaChart, ResponsiveContainer, Tooltip, YAxis } from "recharts";
 import {
   seriesPoints,
@@ -34,6 +35,21 @@ export function TickerCard({
   const stroke = up ? "var(--color-up)" : "var(--color-down)";
   const gradId = `grad-${quote.symbol}-${range}`;
 
+  const [touch, setTouch] = useState<{ idx: number; x: number } | null>(null);
+
+  const handleTouch = (e: React.TouchEvent<HTMLDivElement>) => {
+    e.stopPropagation();
+    const t = e.touches[0];
+    if (!t) return;
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = t.clientX - rect.left;
+    const width = rect.width;
+    if (width <= 0) return;
+    const pctClamped = Math.max(0, Math.min(1, x / width));
+    const idx = Math.round(pctClamped * (data.length - 1));
+    setTouch({ idx, x });
+  };
+
   return (
     <article className="rounded-lg border border-border bg-card p-3 transition-colors hover:border-ring sm:p-4">
       <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-2 sm:gap-3">
@@ -54,7 +70,7 @@ export function TickerCard({
         </div>
       </div>
 
-      <div className="mt-3 h-20 sm:h-24">
+      <div className="relative mt-3 h-20 sm:h-24">
         <ResponsiveContainer width="100%" height="100%">
           <AreaChart data={data} margin={{ top: 4, right: 0, bottom: 0, left: 0 }}>
             <defs>
@@ -86,6 +102,28 @@ export function TickerCard({
             />
           </AreaChart>
         </ResponsiveContainer>
+
+        <div
+          className="absolute inset-0 z-10 touch-pan-y lg:pointer-events-none"
+          onTouchStart={handleTouch}
+          onTouchMove={handleTouch}
+          onTouchEnd={() => setTouch(null)}
+        />
+
+        {touch && (
+          <>
+            <div
+              className="pointer-events-none absolute bottom-0 top-0 w-px bg-foreground/30"
+              style={{ left: touch.x }}
+            />
+            <div
+              className="pointer-events-none absolute -translate-x-1/2 rounded border border-border bg-popover px-1.5 py-0.5 font-mono text-[10px] text-popover-foreground shadow-sm"
+              style={{ left: touch.x, top: 2 }}
+            >
+              {data[touch.idx]!.value.toFixed(2)}
+            </div>
+          </>
+        )}
       </div>
 
       <div className="mt-2 flex items-center justify-between font-mono text-[11px] text-muted-foreground">
