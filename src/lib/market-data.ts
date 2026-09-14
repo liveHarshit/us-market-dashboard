@@ -1,6 +1,6 @@
 export type Range = "1D" | "1W" | "1M" | "YTD" | "1Y";
 
-export const RANGES: Range[] = ["1D", "1W", "1M", "YTD", "1Y"];
+export const RANGES: Range[] = ["1D", "1W", "1M", "1Y", "YTD"];
 
 export const RANGE_LABEL: Record<Range, string> = {
   "1D": "Today",
