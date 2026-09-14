@@ -1,0 +1,43 @@
+name: Refresh market data
+
+on:
+  schedule:
+    # Every 15 minutes, 13:00–21:00 UTC on weekdays (US market hours) plus a
+    # couple of after-close runs so the page is never badly stale.
+    - cron: "*/15 13-21 * * 1-5"
+    - cron: "0 22,2 * * 1-6"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: refresh-market-data
+  cancel-in-progress: true
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Fetch live quotes
+        run: bun scripts/fetch-market-data.ts
+
+      - name: Publish data to gh-pages
+        run: |
+          git config user.name "market-data-bot"
+          git config user.email "actions@github.com"
+          mkdir -p /tmp/data && cp public/data/market.json /tmp/data/market.json
+          git fetch origin gh-pages
+          git checkout gh-pages
+          mkdir -p data && cp /tmp/data/market.json data/market.json
+          git add data/market.json
+          git diff --staged --quiet || git commit -m "Refresh market data"
+          git push origin gh-pages
