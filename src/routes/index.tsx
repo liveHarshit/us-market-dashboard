@@ -5,7 +5,8 @@ import {
   JAPAN_ETFS,
   RANGES,
   RANGE_LABEL,
-  US_STOCKS,
+  TAIWAN_ETFS,
+  US_CATEGORIES,
   type Range,
   type Ticker,
 } from "@/lib/market-data";
@@ -13,38 +14,55 @@ import {
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Meridian — US Stocks & Japan ETF Monitor" },
+      { title: "Meridian — US Stocks, Japan & Taiwan ETF Monitor" },
       {
         name: "description",
         content:
-          "Track top US stocks and US-listed Japan ETFs side by side with one shared time filter and clean price charts.",
+          "Track top US stocks by sector alongside US-listed Japan and Taiwan ETFs with one shared time filter and clean price charts.",
       },
-      { property: "og:title", content: "Meridian — US Stocks & Japan ETF Monitor" },
+      {
+        property: "og:title",
+        content: "Meridian — US Stocks, Japan & Taiwan ETF Monitor",
+      },
       {
         property: "og:description",
         content:
-          "Top US stocks and US-listed Japan ETFs in one simple dashboard with a shared time filter.",
+          "Top US stocks by sector plus US-listed Japan and Taiwan ETFs in one simple dashboard.",
       },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
   component: Dashboard,
 });
+
+function Grid({ tickers, range }: { tickers: Ticker[]; range: Range }) {
+  return (
+    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+      {tickers.map((t) => (
+        <TickerCard key={t.symbol} ticker={t} range={range} />
+      ))}
+    </div>
+  );
+}
+
+function SectionHeader({ title, note }: { title: string; note: string }) {
+  return (
+    <div className="mb-3 flex items-baseline gap-3">
+      <h2 className="text-base font-semibold tracking-tight text-foreground">{title}</h2>
+      <span className="h-px flex-1 bg-border" />
+      <span className="font-mono text-[11px] text-muted-foreground">{note}</span>
+    </div>
+  );
+}
 
 function Section({
   title, note, tickers, range,
 }: { title: string; note: string; tickers: Ticker[]; range: Range }) {
   return (
     <section>
-      <div className="mb-3 flex items-baseline gap-3">
-        <h2 className="text-base font-semibold tracking-tight text-foreground">{title}</h2>
-        <span className="h-px flex-1 bg-border" />
-        <span className="font-mono text-[11px] text-muted-foreground">{note}</span>
-      </div>
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-        {tickers.map((t) => (
-          <TickerCard key={t.symbol} ticker={t} range={range} />
-        ))}
-      </div>
+      <SectionHeader title={title} note={note} />
+      <Grid tickers={tickers} range={range} />
     </section>
   );
 }
@@ -61,7 +79,7 @@ function Dashboard() {
               MERIDIAN
             </h1>
             <p className="text-xs text-muted-foreground">
-              US stocks &amp; Japan ETFs listed in the US
+              US stocks by sector &amp; Japan / Taiwan ETFs listed in the US
             </p>
           </div>
 
@@ -89,11 +107,29 @@ function Dashboard() {
       </header>
 
       <main className="mx-auto max-w-6xl space-y-8 px-5 py-8">
-        <Section title="Top US stocks" note="15 names" tickers={US_STOCKS} range={range} />
+        <section>
+          <SectionHeader title="Top US stocks" note="5 sectors · 15 names" />
+          <div className="space-y-6">
+            {US_CATEGORIES.map((c) => (
+              <div key={c.label}>
+                <h3 className="mb-2 font-mono text-[11px] uppercase tracking-[0.14em] text-muted-foreground">
+                  {c.label}
+                </h3>
+                <Grid tickers={c.tickers} range={range} />
+              </div>
+            ))}
+          </div>
+        </section>
         <Section
           title="Japan ETFs (US-listed)"
           note="9 funds"
           tickers={JAPAN_ETFS}
+          range={range}
+        />
+        <Section
+          title="Taiwan ETFs (US-listed)"
+          note="9 funds"
+          tickers={TAIWAN_ETFS}
           range={range}
         />
         <p className="font-mono text-[11px] text-muted-foreground">
