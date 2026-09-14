@@ -224,3 +224,85 @@ export const RANGE_LABEL: Record<Range, string> = {
   YTD: "Year to date",
   "1Y": "Past year",
 };
+
+export const TAIWAN_ETFS: Ticker[] = [
+  {
+    symbol: "EWT",
+    name: "iShares MSCI Taiwan",
+    price: 62.41,
+    change: { "1D": 1.28, "1W": 2.6, "1M": 6.4, YTD: 24.7, "1Y": 31.2 },
+    volume: "3.4M",
+  },
+  {
+    symbol: "FLTW",
+    name: "Franklin FTSE Taiwan",
+    price: 42.86,
+    change: { "1D": 1.11, "1W": 2.3, "1M": 5.9, YTD: 23.1, "1Y": 29.4 },
+    volume: "0.4M",
+  },
+  {
+    symbol: "AAXJ",
+    name: "iShares MSCI All Country Asia ex Japan",
+    price: 82.17,
+    change: { "1D": 0.74, "1W": 1.8, "1M": 4.2, YTD: 18.3, "1Y": 22.6 },
+    volume: "1.9M",
+  },
+  {
+    symbol: "FLAX",
+    name: "Franklin FTSE Asia ex Japan",
+    price: 34.52,
+    change: { "1D": 0.66, "1W": 1.5, "1M": 3.8, YTD: 16.9, "1Y": 20.8 },
+    volume: "0.2M",
+  },
+  {
+    symbol: "EEMA",
+    name: "iShares MSCI Emerging Markets Asia",
+    price: 88.94,
+    change: { "1D": 0.81, "1W": 1.9, "1M": 4.6, YTD: 19.4, "1Y": 24.1 },
+    volume: "0.3M",
+  },
+  {
+    symbol: "EMXC",
+    name: "iShares MSCI Emerging Markets ex China",
+    price: 71.63,
+    change: { "1D": 0.58, "1W": 1.2, "1M": 3.1, YTD: 14.6, "1Y": 18.7 },
+    volume: "1.1M",
+  },
+  {
+    symbol: "VPL",
+    name: "Vanguard FTSE Pacific",
+    price: 94.28,
+    change: { "1D": 0.42, "1W": 1.1, "1M": 2.9, YTD: 13.5, "1Y": 17.4 },
+    volume: "0.6M",
+  },
+  {
+    symbol: "DFAE",
+    name: "Dimensional Emerging Core Equity Market",
+    price: 32.75,
+    change: { "1D": 0.49, "1W": 1.3, "1M": 3.4, YTD: 15.2, "1Y": 19.1 },
+    volume: "0.7M",
+  },
+  {
+    symbol: "FRDM",
+    name: "Freedom 100 Emerging Markets",
+    price: 38.19,
+    change: { "1D": -0.22, "1W": 0.9, "1M": 2.6, YTD: 12.8, "1Y": 16.3 },
+    volume: "0.1M",
+  },
+];
+
+const BY_SYMBOL: Record<string, Ticker> = Object.fromEntries(
+  US_STOCKS.map((t) => [t.symbol, t]),
+);
+
+const pick = (...symbols: string[]): Ticker[] => symbols.map((s) => BY_SYMBOL[s]!);
+
+export type Category = { label: string; tickers: Ticker[] };
+
+export const US_CATEGORIES: Category[] = [
+  { label: "Software & cloud", tickers: pick("MSFT", "NOW", "TEAM") },
+  { label: "Data & security", tickers: pick("SNOW", "DDOG", "CRWD") },
+  { label: "Semiconductors & hardware", tickers: pick("NVDA", "WDC", "AAPL") },
+  { label: "Internet & entertainment", tickers: pick("GOOGL", "NFLX", "TSLA") },
+  { label: "Consumer, health & telecom", tickers: pick("WMT", "ELV", "TMUS") },
+];
